@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+.output/
+.nitro/
+.vinxi/
+.vercel/
+
+# Env
+.env
+.env.local
+.env.*.local
+.dev.vars
+
+# Logs / OS
+*.log
+.DS_Store
+
+# Tooling
+.turbo
+.wrangler/
+coverage/
+.vite/
+
+# IDE
+.idea/
+.vscode/
+*.swp
