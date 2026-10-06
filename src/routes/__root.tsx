@@ -15,7 +15,6 @@ import { AssistenteBubbleLazy } from "@/components/assistente-bubble-lazy";
 import { Toaster } from "@/components/ui/sonner";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
   return (
@@ -42,9 +41,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -65,45 +61,33 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           >
             Try again
           </button>
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          <a
+            href="/"
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
             Go home
-          </Link>
+          </a>
         </div>
       </div>
     </div>
   );
 }
 
-export const Route = createRootRouteWithContext<{
-  queryClient: QueryClient;
-}>()({
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ArqHub — Gestão para Arquitetura, Engenharia e Interiores" },
-      {
-        name: "description",
-        content:
-          "Gerencie projetos, clientes, obras e finanças em um único lugar.",
-      },
+      { title: "ArqHub" },
+      { name: "description", content: "Gerencie projetos, clientes, obras e finanças em um único lugar. Plataforma  para arquitetos, engenheiros e designers." },
       { property: "og:title", content: "ArqHub" },
-      {
-        property: "og:description",
-        content:
-          "Gerencie projetos, clientes, obras e finanças em um único lugar. Plataforma  para arquitetos, engenheiros e designers.",
-      },
+      { property: "og:description", content: "Gerencie projetos, clientes, obras e finanças em um único lugar. Plataforma  para arquitetos, engenheiros e designers." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "ArqHub" },
-      {
-        name: "twitter:description",
-        content:
-          "Gerencie projetos, clientes, obras e finanças em um único lugar. Plataforma  para arquitetos, engenheiros e designers.",
-      },
+      { name: "twitter:description", content: "Gerencie projetos, clientes, obras e finanças em um único lugar. Plataforma  para arquitetos, engenheiros e designers." },
+      { property: "og:image", content: "https://arqhub.world/og-image.webp" },
+      { name: "twitter:image", content: "https://arqhub.world/og-image.webp" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "theme-color", content: "#0F172A" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
@@ -112,18 +96,20 @@ export const Route = createRootRouteWithContext<{
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap",
-      },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" },
     ],
   }),
+  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
 
-function RootDocument({ children }: { children: ReactNode }) {
+function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -175,6 +161,7 @@ function RootComponent() {
     void import("@/lib/pwa-detect").then(({ isPwaStandalone }) => {
       if (!isPwaStandalone()) return;
       const path = window.location.pathname;
+      // Em modo app instalado, só permitimos /app/*, /entrar, /esqueci-senha, /redefinir-senha e /auth/*.
       const allowed =
         path.startsWith("/app") ||
         path.startsWith("/entrar") ||
@@ -187,8 +174,10 @@ function RootComponent() {
     });
   }, []);
 
+
   return (
     <QueryClientProvider client={queryClient}>
+      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <BackToTop />
       <GlobalLogCapture />
