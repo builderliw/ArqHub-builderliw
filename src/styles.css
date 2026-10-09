@@ -1,0 +1,367 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* Radii — coerentes e enxutos, estilo Linear */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 20px;
+
+  /* Cores */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+
+  /* Tipografia premium — Geist Sans (Vercel/Linear feel) */
+  --font-display: "Geist", "Inter Tight", system-ui, sans-serif;
+  --font-sans: "Geist", "Inter", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Sombras em camadas — premium, suaves, multi-layer (Linear/Stripe) */
+  --shadow-xs: 0 1px 2px 0 rgb(16 24 40 / 0.04);
+  --shadow-sm: 0 1px 2px 0 rgb(16 24 40 / 0.04), 0 1px 3px 0 rgb(16 24 40 / 0.04);
+  --shadow-md: 0 2px 4px -2px rgb(16 24 40 / 0.06), 0 4px 8px -2px rgb(16 24 40 / 0.06);
+  --shadow-lg: 0 4px 6px -2px rgb(16 24 40 / 0.04), 0 12px 20px -4px rgb(16 24 40 / 0.08);
+  --shadow-xl: 0 8px 12px -4px rgb(16 24 40 / 0.04), 0 24px 48px -8px rgb(16 24 40 / 0.12);
+  --shadow-ring: 0 0 0 1px rgb(16 24 40 / 0.06);
+  --shadow-glow: 0 0 0 1px var(--primary), 0 8px 24px -4px color-mix(in oklab, var(--primary) 28%, transparent);
+}
+
+:root {
+  /* Paleta premium — base mais clara, contraste editorial */
+  --background: #FFFFFF;                  /* Branco puro */
+  --surface: #FAFAF9;                     /* Off-white sutil (estilo Notion/Linear) */
+  --surface-2: #F4F4F3;                   /* Cinza neutro quente para seções */
+
+  --ink: #0A0A0A;                         /* Preto editorial p/ títulos */
+  --ink-muted: #525252;                   /* Cinza chumbo p/ subtítulos */
+  --foreground: #1F1F1F;                  /* Texto base — mais escuro, mais autoridade */
+
+  --card: #FFFFFF;
+  --card-foreground: #1F1F1F;
+  --popover: #FFFFFF;
+  --popover-foreground: #1F1F1F;
+
+  --primary: #4B6241;                     /* Verde ArqHub */
+  --primary-foreground: #FFFFFF;
+  --primary-dark: #3B4E33;
+
+  --secondary: #F4F4F3;
+  --secondary-foreground: #1F1F1F;
+
+  --muted: #F4F4F3;
+  --muted-foreground: #737373;
+
+  --accent: #EEF2E8;                      /* Verde muito claro, mais sóbrio */
+  --accent-foreground: #3B4E33;
+
+  --destructive: #B42318;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #ECECEA;                      /* Border padrão — quase imperceptível */
+  --border-strong: #D6D6D3;               /* Border de ênfase */
+  --input: #E4E4E2;
+  --ring: #4B6241;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Hierarquia tipográfica — escala consistente em todo o site.
+     Cor é herdada para funcionar em fundos claros e escuros.
+     Utilitários Tailwind (text-*, font-*) sobrescrevem quando necessário. */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    color: inherit;
+    letter-spacing: -0.022em;
+    font-weight: 600;
+    line-height: 1.15;
+  }
+  h1 {
+    font-size: clamp(2rem, 3.5vw, 2.75rem); /* 32–44px */
+    line-height: 1.1;
+    letter-spacing: -0.028em;
+  }
+  h2 {
+    font-size: clamp(1.5rem, 2.5vw, 2rem); /* 24–32px */
+    line-height: 1.15;
+    letter-spacing: -0.024em;
+  }
+  h3 {
+    font-size: 1.25rem; /* 20px */
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+  }
+  h4 {
+    font-size: 1rem; /* 16px */
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+  p {
+    font-size: 0.9375rem; /* 15px */
+    line-height: 1.55;
+  }
+  small {
+    font-size: 0.8125rem; /* 13px */
+    line-height: 1.5;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--primary) 22%, transparent);
+    color: var(--color-ink);
+  }
+
+  /* Scrollbar discreta */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--ink) 14%, transparent);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--ink) 24%, transparent);
+    background-clip: padding-box;
+  }
+}
+
+/* Utilitários de design system */
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility text-pretty {
+  text-wrap: pretty;
+}
+
+@utility surface-grain {
+  background-image:
+    radial-gradient(circle at 20% 0%, color-mix(in oklab, var(--primary) 6%, transparent), transparent 50%),
+    radial-gradient(circle at 80% 100%, color-mix(in oklab, var(--primary) 4%, transparent), transparent 50%);
+}
+
+@utility ring-premium {
+  box-shadow: var(--shadow-ring), var(--shadow-md);
+}
+
+/* Escala tipográfica consistente — usar em toda a página
+   display > h1 > h2 > h3 > body-lg > body > body-sm > caption */
+@utility t-display {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 4.5vw, 3.5rem); /* 40–56px */
+  line-height: 1.05;
+  letter-spacing: -0.028em;
+  font-weight: 600;
+}
+@utility t-h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.5vw, 2.75rem); /* 32–44px */
+  line-height: 1.1;
+  letter-spacing: -0.024em;
+  font-weight: 600;
+}
+@utility t-h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.5vw, 2rem); /* 24–32px */
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+@utility t-h3 {
+  font-family: var(--font-display);
+  font-size: 1.25rem; /* 20px */
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  font-weight: 600;
+}
+@utility t-h4 {
+  font-family: var(--font-display);
+  font-size: 1.0625rem; /* 17px */
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+@utility t-eyebrow {
+  font-size: 0.6875rem; /* 11px */
+  line-height: 1;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+@utility t-body-lg {
+  font-size: 1rem; /* 16px */
+  line-height: 1.6;
+  font-weight: 400;
+}
+@utility t-body {
+  font-size: 0.9375rem; /* 15px */
+  line-height: 1.55;
+  font-weight: 400;
+}
+@utility t-body-sm {
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.5;
+  font-weight: 400;
+}
+@utility t-caption {
+  font-size: 0.75rem; /* 12px */
+  line-height: 1.4;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+@utility t-label {
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+/* Office name — identidade ArqHub, tipografia premium */
+@utility office-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-feature-settings: "ss01", "cv11";
+}
+@utility office-name-on-dark {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-feature-settings: "ss01", "cv11";
+  color: #A8C48A;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+}
+@utility office-name-on-light {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-feature-settings: "ss01", "cv11";
+  color: #4B6241;
+}
+
+
+
+.marquee {
+  width: 100%;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.marquee-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: marquee-scroll 32s linear infinite;
+  will-change: transform;
+}
+.marquee:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* Anel dourado circulando a margem do botão */
+@keyframes spin-gold {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@utility btn-gold-ring {
+  position: relative;
+  isolation: isolate;
+  overflow: visible;
+  background: #0A0A0A;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    z-index: -2;
+    border-radius: 9999px;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0%,
+      transparent 40%,
+      #FEF3C7 48%,
+      #FCD34D 50%,
+      #F59E0B 52%,
+      #FCD34D 54%,
+      #FEF3C7 60%,
+      transparent 68%,
+      transparent 100%
+    );
+    animation: spin-gold 2.5s linear infinite;
+    will-change: transform;
+  }
+
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    z-index: -1;
+    border-radius: 9999px;
+    background: #0A0A0A;
+  }
+
+  &:hover::before {
+    animation-duration: 1.5s;
+  }
+}
+
+@utility shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2.5s linear infinite;
+}
+
+
+
