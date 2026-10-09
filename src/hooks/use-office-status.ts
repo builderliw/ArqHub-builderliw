@@ -91,4 +91,3 @@ export function useOfficeStatus(): OfficeStatusInfo {
 
   return info;
 }
-
