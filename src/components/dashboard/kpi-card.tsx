@@ -1,4 +1,5 @@
-import { ArrowDownRight, ArrowUpRight, type LucideIcon } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Sparkline } from "./sparkline";
 
 type Props = {

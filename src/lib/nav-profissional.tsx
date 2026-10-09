@@ -50,4 +50,3 @@ export function getNavProfissional(plan: Plan | undefined, isMember = false): Na
 
 // Mantém export anterior (default premium, dono) para compat — AppShell filtra por plano.
 export const navProfissional: NavGroup[] = getNavProfissional("premium", false);
-
