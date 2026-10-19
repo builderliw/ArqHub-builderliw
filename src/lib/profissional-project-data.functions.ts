@@ -415,13 +415,22 @@ export const listProfessionalMeetings = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { externalAdmin, user } = await auth(data.accessToken);
     await ensureProjectAccess(externalAdmin, user, data.projectId);
-    const { data: rows, error } = await externalAdmin
+    const base = "id, project_id, title, scheduled_at, duration_min, location, mode, link, notes, status";
+    let q: any = await externalAdmin
       .from("project_meetings")
-      .select("id, project_id, title, scheduled_at, duration_min, location, mode, link, notes, status")
+      .select(`${base}, client_status, client_note, client_decided_at`)
       .eq("project_id", data.projectId)
       .order("scheduled_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return { meetings: rows ?? [] };
+    if (q.error) {
+      // Banco sem a migração de decisão do cliente: lê só as colunas básicas.
+      q = await externalAdmin
+        .from("project_meetings")
+        .select(base)
+        .eq("project_id", data.projectId)
+        .order("scheduled_at", { ascending: false });
+    }
+    if (q.error) throw new Error(q.error.message);
+    return { meetings: q.data ?? [] };
   });
 
 export const saveProfessionalMeeting = createServerFn({ method: "POST" })
@@ -1235,7 +1244,7 @@ export const getProfissionalDashboard = createServerFn({ method: "POST" })
           .neq("sender_id", user.id),
         externalAdmin
           .from("project_messages")
-          .select("id, project_id, sender_name, content, created_at")
+          .select("id, project_id, sender_id, body, created_at")
           .in("project_id", projectIds)
           .neq("sender_id", user.id)
           .order("created_at", { ascending: false })
@@ -1244,12 +1253,18 @@ export const getProfissionalDashboard = createServerFn({ method: "POST" })
       stages = stagesRes.data ?? [];
       unreadCount = countRes.count ?? 0;
       messages = msgsRes.data ?? [];
+      const senderIds = Array.from(new Set(messages.map((m: any) => m.sender_id).filter(Boolean))) as string[];
+      if (senderIds.length > 0) {
+        const labels = await buildSenderLabels(externalAdmin, officeId, senderIds);
+        messages = messages.map((m: any) => ({ ...m, sender_name: labels[m.sender_id] ?? "Cliente", content: m.body }));
+      }
       if (stages.length) {
         const stageIds = stages.map((s: any) => s.id);
         const { data: ap } = await externalAdmin
           .from("stage_approvals")
-          .select("id, stage_id, status")
-          .in("stage_id", stageIds);
+          .select("id, stage_id, status, created_at")
+          .in("stage_id", stageIds)
+          .order("created_at", { ascending: false });
         approvals = ap ?? [];
       }
     }
