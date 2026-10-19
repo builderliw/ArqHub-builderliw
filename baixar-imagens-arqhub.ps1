@@ -2,17 +2,19 @@
 #  ArqHub - recupera as imagens do site antigo (arqhub.world) para o GitHub
 #  Como usar: veja as instrucoes que vieram junto. Nao altera nada no site.
 # ============================================================================
-param([string]$Site = "https://arqhub.world")
+param([string]$Site = "https://arqhub.world", [string]$Destino = "", [switch]$Auto)
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
 $Site = $Site.TrimEnd("/")
 
-$Desk = [Environment]::GetFolderPath("Desktop")
-if (-not $Desk) { $Desk = $HOME }
-$Saida = Join-Path $Desk "ArqHub-imagens"
-$PastaAssets = Join-Path $Saida "src\assets"
-$PastaMedia  = Join-Path $Saida "public\media"
+if ($Destino) { $Saida = (Resolve-Path $Destino).Path } else {
+  $Desk = [Environment]::GetFolderPath("Desktop")
+  if (-not $Desk) { $Desk = $HOME }
+  $Saida = Join-Path $Desk "ArqHub-imagens"
+}
+$PastaAssets = [IO.Path]::Combine($Saida, "src", "assets")
+$PastaMedia  = [IO.Path]::Combine($Saida, "public", "media")
 New-Item -ItemType Directory -Force -Path $PastaAssets, $PastaMedia | Out-Null
 
 # Imagens que o codigo do ArqHub usa e que faltam no GitHub
@@ -167,7 +169,7 @@ foreach ($p in $Paginas) {
 }
 if ($Vistos.Count -eq 0) {
   Write-Host "Nao consegui abrir $Site. Verifique a internet e se o site antigo ainda esta no ar." -ForegroundColor Red
-  Read-Host "Aperte Enter para fechar"; exit 1
+  if (-not $Auto) { Read-Host "Aperte Enter para fechar" }; exit 1
 }
 
 Write-Host "2/3  Procurando imagens nos arquivos do site (pode levar 1-2 minutos)..." -ForegroundColor Yellow
@@ -195,6 +197,7 @@ foreach ($nec in $Necessarias) {
   $padrao = '^' + [regex]::Escape($base) + '-[A-Za-z0-9_\-]{6,12}' + [regex]::Escape($ext) + '$'
   $achou = $Imagens | Where-Object { $_ -ceq $nec -or $_ -cmatch $padrao } | Select-Object -First 1
   $dest = Join-Path $PastaAssets $nec
+  if ($Auto -and (Test-Path $dest)) { $ok++; continue }
   if ($achou -and (Baixar-Arquivo ($Site + "/assets/" + $achou) $dest)) { $ok++ }
   else { $Faltando += $nec }
 }
@@ -202,7 +205,7 @@ foreach ($nec in $Necessarias) {
 $okMedia = 0
 foreach ($item in $Media) {
   $url = $item.Url.Replace("{BASE}", $Site)
-  $dest = Join-Path $Saida ($item.Dest -replace "/", "\")
+  $dest = [IO.Path]::Combine([string[]](@($Saida) + ($item.Dest -split "/")))
   New-Item -ItemType Directory -Force -Path (Split-Path $dest) | Out-Null
   if (Baixar-Arquivo $url $dest) { $okMedia++ } else { $Faltando += $item.Dest }
 }
@@ -213,11 +216,13 @@ Write-Host "PRONTO!" -ForegroundColor Green
 Write-Host "  Fotos das paginas (src\assets):  $ok de $($Necessarias.Count)"
 Write-Host "  Imagens principais (public):     $okMedia de $($Media.Count)"
 if ($Faltando.Count -gt 0) {
-  $lista = Join-Path $Saida "FALTANDO.txt"
+  $lista = if ($Auto) { Join-Path ([IO.Path]::GetTempPath()) "FALTANDO.txt" } else { Join-Path $Saida "FALTANDO.txt" }
   $Faltando | Set-Content -Path $lista -Encoding UTF8
   Write-Host "  Nao encontradas: $($Faltando.Count) (lista em FALTANDO.txt)" -ForegroundColor Yellow
 }
 Write-Host ""
 Write-Host "Pasta com as imagens: $Saida" -ForegroundColor Cyan
-try { Start-Process explorer.exe $Saida } catch {}
-Read-Host "Aperte Enter para fechar"
+if (-not $Auto) {
+  try { Start-Process explorer.exe $Saida } catch {}
+  Read-Host "Aperte Enter para fechar"
+}
