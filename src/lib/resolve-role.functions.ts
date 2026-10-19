@@ -1,5 +1,32 @@
 import { createServerFn } from "@tanstack/react-start";
 
+/** Diagnóstico seguro da chave do servidor: nunca expõe o valor, só tipo/projeto. */
+function describeServiceKey() {
+  const key = process.env.EXTERNAL_SUPABASE_SERVICE_ROLE_KEY ?? "";
+  if (!key) return { kind: "ausente" };
+  if (key.startsWith("sb_secret_")) return { kind: "sb_secret (ok)" };
+  if (key.startsWith("sb_publishable_")) return { kind: "sb_publishable (ERRADA: é a chave pública)" };
+  if (key.startsWith("eyJ")) {
+    try {
+      const payload = JSON.parse(Buffer.from(key.split(".")[1], "base64url").toString("utf8"));
+      return {
+        kind: "jwt",
+        role: payload.role,
+        ref: payload.ref,
+        projetoCerto: payload.ref === "yknwdpyaevodvonvhadt",
+        papelCerto: payload.role === "service_role",
+      };
+    } catch {
+      return { kind: "jwt ilegível" };
+    }
+  }
+  return { kind: "formato desconhecido", length: key.length };
+}
+
+function logFailure(reason: string, extra: Record<string, unknown> = {}) {
+  console.error("[resolve-role] login sem papel", JSON.stringify({ reason, key: describeServiceKey(), ...extra }));
+}
+
 export const resolveUserRole = createServerFn({ method: "POST" })
   .inputValidator((input: { accessToken: string }) => {
     if (!input?.accessToken) throw new Error("accessToken obrigatório");
@@ -8,7 +35,10 @@ export const resolveUserRole = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { externalAdmin } = await import("@/integrations/external-supabase/admin.server");
     const { data: userData, error } = await externalAdmin.auth.getUser(data.accessToken);
-    if (error || !userData?.user) return { ok: false as const, reason: "unauthenticated" as const };
+    if (error || !userData?.user) {
+      logFailure("unauthenticated", { error: error?.message });
+      return { ok: false as const, reason: "unauthenticated" as const };
+    }
     const user = userData.user;
     const email = (user.email ?? "").toLowerCase();
 
@@ -54,5 +84,6 @@ export const resolveUserRole = createServerFn({ method: "POST" })
       return { ok: true as const, role: "cliente" as const, name: email.split("@")[0], email };
     }
 
+    logFailure("no_role", { email });
     return { ok: false as const, reason: "no_role" as const };
   });
