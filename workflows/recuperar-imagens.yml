@@ -1,38 +1,26 @@
-# Recupera as imagens do site antigo (arqhub.world) e grava no repositorio.
-# Roda sozinho quando este arquivo ou o script sao enviados ao GitHub,
-# e tambem pode ser rodado manualmente em Actions > Recuperar imagens > Run workflow.
-name: Recuperar imagens
+   name: Recuperar imagens
 
-on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/recuperar-imagens.yml"
-      - "baixar-imagens-arqhub.ps1"
-  workflow_dispatch:
+   on:
+     push:
+       branches: [main]
+       paths:
+         - ".github/workflows/recuperar-imagens.yml"
+     workflow_dispatch:
 
-permissions:
-  contents: write
+   permissions:
+     contents: write
 
-jobs:
-  imagens:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Baixar o repositorio
-        uses: actions/checkout@v4
-
-      - name: Baixar imagens do arqhub.world
-        shell: pwsh
-        run: ./baixar-imagens-arqhub.ps1 -Destino . -Auto
-
-      - name: Gravar imagens no repositorio
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/assets public
-          if git diff --cached --quiet; then
-            echo "Nenhuma imagem nova para gravar."
-          else
-            git commit -m "Recupera imagens do site antigo (arqhub.world)"
-            git push
-          fi
+   jobs:
+     imagens:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v4
+         - name: Baixar imagens do arqhub.world
+           shell: pwsh
+           run: ./baixar-imagens-arqhub.ps1 -Destino . -Auto
+         - name: Gravar imagens no repositorio
+           run: |
+             git config user.name "github-actions[bot]"
+             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+             git add src/assets public
+             if git diff --cached --quiet; then echo "Nada novo."; else git commit -m "Recupera imagens do site antigo" && git push; fi
