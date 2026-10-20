@@ -210,11 +210,25 @@ async function main() {
 
   let okMedia = 0;
   await emLotes(faltamMedia, 8, async ([orig, destino]) => {
-    const url = orig.startsWith("http") ? orig : SITE + orig;
-    if (await salvar(url, join(ROOT, destino))) okMedia++;
+    // 1o tenta o caminho publico (/media/x.png ou /og-image.webp), que existe quando
+    // o dominio ja aponta para a Vercel; depois o endereco antigo da Lovable.
+    const publico = "/" + destino.replace(/^public\//, "");
+    const lovable = orig.startsWith("http") ? orig : SITE + orig;
+    if ((await salvar(SITE + publico, join(ROOT, destino))) || (await salvar(lovable, join(ROOT, destino)))) okMedia++;
   });
 
   console.log(`[imagens] baixadas: ${ok}/${faltam.length} fotos, ${okMedia}/${faltamMedia.length} imagens principais (${Math.round((Date.now() - inicio) / 1000)}s)`);
+
+  // Trava de seguranca: se quase nada veio, cancela o build. Assim a Vercel mantem
+  // no ar a versao anterior (com imagens) em vez de publicar um site sem fotos.
+  const total = faltam.length + faltamMedia.length;
+  if (total > 0 && ok + okMedia < total * 0.5 && process.env.IMAGENS_PERMITIR_SEM !== "1") {
+    console.log("[imagens] ERRO: nao consegui baixar as imagens. Build cancelado para nao publicar o site sem fotos.");
+    console.log("[imagens] O site que ja esta no ar continua funcionando. Para publicar mesmo assim, defina IMAGENS_PERMITIR_SEM=1 na Vercel.");
+    process.exitCode = 1;
+  }
 }
 
-main().catch((e) => console.log("[imagens] erro ignorado:", e?.message ?? e)).finally(() => process.exit(0));
+main()
+  .catch((e) => console.log("[imagens] erro ignorado:", e?.message ?? e))
+  .finally(() => process.exit(process.exitCode ?? 0));
