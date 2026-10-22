@@ -12,7 +12,7 @@ type BeforeInstallPromptEvent = Event & {
 const STORAGE_KEY = "arqhub:install-prompt-dismissed-at";
 const NEVER_KEY = "arqhub:install-prompt-never";
 const INSTALLED_KEY = "arqhub:pwa-installed";
-const SNOOZE_MS = 20 * 60 * 1000;
+const SEEN_KEY = "arqhub:install-prompt-seen";
 
 type NavigatorWithRelated = Navigator & {
   getInstalledRelatedApps?: () => Promise<Array<{ platform: string; url?: string; id?: string }>>;
@@ -81,7 +81,10 @@ export function InstallAppPrompt() {
     const isPublic =
       host === "arqhub.world" ||
       host === "www.arqhub.world" ||
-      host.endsWith(".arqhub.world");
+      host.endsWith(".arqhub.world") ||
+      host === "arqhub.site" ||
+      host === "www.arqhub.site" ||
+      host.endsWith(".arqhub.site");
     return isPublic ? window.location.origin : PUBLIC_SITE_URL;
   }, []);
 
@@ -111,6 +114,8 @@ export function InstallAppPrompt() {
       setVisible(false);
       try { localStorage.setItem(INSTALLED_KEY, "1"); } catch {}
       try { localStorage.setItem(STORAGE_KEY, String(Date.now())); } catch {}
+      try { localStorage.setItem(SEEN_KEY, "1"); } catch {}
+      try { localStorage.setItem(NEVER_KEY, "1"); } catch {}
     };
     window.addEventListener("appinstalled", onInstalled);
     cleanups.push(() => window.removeEventListener("appinstalled", onInstalled));
@@ -133,6 +138,7 @@ export function InstallAppPrompt() {
           setDeferred(null);
           if (choice.outcome === "accepted") {
             try { localStorage.setItem(INSTALLED_KEY, "1"); } catch {}
+            try { localStorage.setItem(NEVER_KEY, "1"); } catch {}
           }
           return;
         } catch {
@@ -150,19 +156,21 @@ export function InstallAppPrompt() {
       if (await isAppAlreadyInstalled()) return;
       if (cancelled) return;
 
-      let delay = forceInstall ? 250 : 1200;
+      // Já viu uma vez (ou pediu para não mostrar mais) → não abre sozinho
       try {
-        if (!forceInstall && localStorage.getItem(NEVER_KEY) === "1") return;
         if (!forceInstall) {
-          const last = Number(localStorage.getItem(STORAGE_KEY) || 0);
-          if (last) {
-            const remaining = last + SNOOZE_MS - Date.now();
-            if (remaining > 0) delay = remaining;
-          }
+          if (localStorage.getItem(NEVER_KEY) === "1") return;
+          if (localStorage.getItem(SEEN_KEY) === "1") return;
         }
       } catch {}
 
-      const t = window.setTimeout(() => { if (!cancelled) setVisible(true); }, delay);
+      const delay = forceInstall ? 250 : 1200;
+
+      const t = window.setTimeout(() => {
+        if (cancelled) return;
+        try { localStorage.setItem(SEEN_KEY, "1"); } catch {}
+        setVisible(true);
+      }, delay);
       cleanups.push(() => window.clearTimeout(t));
     };
 
@@ -174,24 +182,14 @@ export function InstallAppPrompt() {
     };
   }, []);
 
-  const snooze = () => {
-    try { localStorage.setItem(STORAGE_KEY, String(Date.now())); } catch {}
-  };
-
   const dismiss = () => {
-    snooze();
+    // Fechou ou "Agora não" → nunca mais abrir sozinho neste navegador
+    try { localStorage.setItem(STORAGE_KEY, String(Date.now())); } catch {}
+    try { localStorage.setItem(SEEN_KEY, "1"); } catch {}
+    try { localStorage.setItem(NEVER_KEY, "1"); } catch {}
     setVisible(false);
     setView("main");
     setStep(0);
-    // reaparece em 20 minutos se a aba continuar aberta
-    window.setTimeout(() => {
-      if (isPwaStandalone()) return;
-      try {
-        if (localStorage.getItem(NEVER_KEY) === "1") return;
-        if (localStorage.getItem(INSTALLED_KEY) === "1") return;
-      } catch {}
-      setVisible(true);
-    }, SNOOZE_MS);
   };
 
   useEffect(() => {
@@ -206,6 +204,7 @@ export function InstallAppPrompt() {
 
   const neverShowAgain = () => {
     try { localStorage.setItem(NEVER_KEY, "1"); } catch {}
+    try { localStorage.setItem(SEEN_KEY, "1"); } catch {}
     setVisible(false);
   };
 
@@ -265,6 +264,7 @@ export function InstallAppPrompt() {
         });
         if (choice.outcome === "accepted") {
           try { localStorage.setItem(INSTALLED_KEY, "1"); } catch {}
+          try { localStorage.setItem(NEVER_KEY, "1"); } catch {}
         }
         setVisible(false);
         setInstalling(false);
