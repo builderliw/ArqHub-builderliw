@@ -25,7 +25,7 @@ import ia4 from "@/assets/ia-4.jpg";
 import conteudoEmpreenda from "@/assets/conteudo-empreenda.jpg";
 import conteudoPotencializador from "@/assets/conteudo-potencializador.jpg";
 import conteudoSeuNegocio from "@/assets/conteudo-seu-negocio.jpg";
-import { Brain } from "lucide-react";
+import { Brain, BookOpen } from "lucide-react";
 import { ChatPortalDemo } from "@/components/marketing/chat-portal-demo";
 import { DiarioObraDemo } from "@/components/marketing/diario-obra-demo";
 
@@ -95,6 +95,13 @@ function Home() {
                 >
                   Começar grátis
                   <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform duration-150" strokeWidth={2} />
+                </Link>
+                <Link
+                  to="/academy"
+                  className="group inline-flex items-center gap-2 px-6 h-12 bg-primary text-primary-foreground rounded-lg text-[15px] font-medium hover:bg-primary-dark transition-all duration-150 shadow-[0_1px_0_0_rgb(255_255_255/0.10)_inset,0_2px_4px_0_rgb(0_0_0/0.08),0_8px_24px_-6px_rgb(75_98_65/0.45)] active:scale-[0.985]"
+                >
+                  <BookOpen className="h-4 w-4" strokeWidth={2} />
+                  ArqHub Academy
                 </Link>
               </div>
 
@@ -844,4 +851,3 @@ function PlanosPreview() {
     </section>
   );
 }
-
