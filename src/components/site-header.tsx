@@ -20,6 +20,7 @@ type NavItem = {
   to: string;
   params?: Record<string, string>;
   badge?: string;
+  external?: boolean;
 };
 
 const FUNCIONALIDADES: { heading: string; items: NavItem[] }[] = [
@@ -58,7 +59,7 @@ const RECURSOS_PREMIUM: NavItem[] = [
 
 const CONTEUDOS: NavItem[] = [
   { label: "Portfólio", desc: "Obras reais de escritórios que operam no ArqHub.", icon: Images, to: "/portfolio" },
-  { label: "ArqHub Academy", desc: "Planos de estudo, dicas e trilhas para concursos e provas.", icon: GraduationCap, to: "/academy", badge: "Novo" },
+  { label: "ArqHub Academy", desc: "Planos de estudo, dicas e trilhas para concursos e provas.", icon: GraduationCap, to: "https://arqhub-academy.world", badge: "Novo", external: true },
   { label: "Potencializador", desc: "Matérias especiais sobre tendências, IA e tecnologia.", icon: Zap, to: "/conteudos/potencializador" },
   { label: "Seu Negócio", desc: "PDFs e planilhas grátis para baixar no seu escritório.", icon: Download, to: "/conteudos/seu-negocio" },
 ];
@@ -97,13 +98,10 @@ function ListItem({
   accent?: boolean;
 }) {
   const Icon = item.icon;
-  return (
-    <Link
-      to={item.to as any}
-      params={item.params as any}
-      onClick={onNavigate}
-      className="group flex items-start gap-3 rounded-lg px-2.5 py-2.5 transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-    >
+  const className =
+    "group flex items-start gap-3 rounded-lg px-2.5 py-2.5 transition-colors hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+  const body = (
+    <>
       <span
         className={`mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors ${
           accent
@@ -125,6 +123,18 @@ function ListItem({
         <span className="mt-0.5 block text-[11.5px] leading-snug text-muted-foreground">{item.desc}</span>
       </span>
       <ArrowRight className="mt-2 h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+    </>
+  );
+  if (item.external) {
+    return (
+      <a href={item.to} target="_blank" rel="noopener noreferrer" onClick={onNavigate} className={className}>
+        {body}
+      </a>
+    );
+  }
+  return (
+    <Link to={item.to as any} params={item.params as any} onClick={onNavigate} className={className}>
+      {body}
     </Link>
   );
 }
