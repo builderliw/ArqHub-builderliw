@@ -1,11 +1,11 @@
-// Baixa do site antigo (arqhub.world) as imagens que nao estao no repositorio.
+// Baixa do site Lovable (arqhu.lovable.app) as imagens que nao estao no repositorio.
 // Roda automaticamente antes do build na Vercel. NUNCA interrompe o build:
-// se o site antigo nao responder, o build segue e as imagens ausentes viram
+// se o site nao responder, o build segue e as imagens ausentes viram
 // placeholder (ver vite.config.ts).
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-const SITE = (process.env.IMAGENS_ORIGEM || "https://arqhub.world").replace(/\/$/, "");
+const SITE = (process.env.IMAGENS_ORIGEM || "https://arqhu.lovable.app").replace(/\/$/, "");
 const ROOT = process.cwd();
 const LIMITE_MS = 4 * 60 * 1000;
 const inicio = Date.now();
