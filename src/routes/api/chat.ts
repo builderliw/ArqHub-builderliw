@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import { createAiGateway, getAiApiKey, embed, AI_CHAT_MODEL } from "@/lib/ai-gateway.server";
+import { answerFromKnowledge, toLocalUiMessageStream } from "@/lib/liw-kb.server";
 
 const BASE_SYSTEM = `Você é a Liw, assistente virtual do ArqHub, plataforma brasileira de gestão para arquitetos, engenheiros e designers. Apresente-se como "Liw" quando fizer sentido.
 
@@ -71,14 +72,21 @@ export const Route = createFileRoute("/api/chat")({
         if (!Array.isArray(messages) || messages.length === 0) {
           return new Response("Messages are required", { status: 400 });
         }
-        const key = getAiApiKey();
-        if (!key) return new Response("Missing AI_API_KEY", { status: 500 });
 
         const last = messages[messages.length - 1];
-        const lastText = last.parts
+        const lastText = (last?.parts ?? [])
           .map((p) => (p.type === "text" ? p.text : ""))
           .join(" ")
           .trim();
+
+        const key = getAiApiKey();
+
+        // Sem chave de IA → motor local (FAQ + busca textual na base)
+        if (!key) {
+          const answer = await answerFromKnowledge(lastText);
+          return toLocalUiMessageStream(answer, messages);
+        }
+
         const context = lastText ? await retrieveContext(lastText) : "";
 
         const now = new Date();
