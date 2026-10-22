@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AbrirChromeRouteImport } from './routes/abrir-chrome'
+import { Route as AcademyRouteImport } from './routes/academy'
 import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AssistenteRouteImport } from './routes/assistente'
@@ -133,6 +134,11 @@ const IndexRoute = IndexRouteImport.update({
 const AbrirChromeRoute = AbrirChromeRouteImport.update({
   id: '/abrir-chrome',
   path: '/abrir-chrome',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcademyRoute = AcademyRouteImport.update({
+  id: '/academy',
+  path: '/academy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AjudaRoute = AjudaRouteImport.update({
@@ -735,6 +741,7 @@ const AppProfissionalFerramentasPlanejamentoRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/abrir-chrome': typeof AbrirChromeRoute
+  '/academy': typeof AcademyRoute
   '/ajuda': typeof AjudaRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/assistente': typeof AssistenteRoute
@@ -852,6 +859,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/abrir-chrome': typeof AbrirChromeRoute
+  '/academy': typeof AcademyRoute
   '/app': typeof AppRouteWithChildren
   '/assistente': typeof AssistenteRoute
   '/blog': typeof BlogRoute
@@ -967,6 +975,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/abrir-chrome': typeof AbrirChromeRoute
+  '/academy': typeof AcademyRoute
   '/ajuda': typeof AjudaRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/assistente': typeof AssistenteRoute
@@ -1086,6 +1095,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/abrir-chrome'
+    | '/academy'
     | '/ajuda'
     | '/app'
     | '/assistente'
@@ -1203,6 +1213,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/abrir-chrome'
+    | '/academy'
     | '/app'
     | '/assistente'
     | '/blog'
@@ -1317,6 +1328,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/abrir-chrome'
+    | '/academy'
     | '/ajuda'
     | '/app'
     | '/assistente'
@@ -1435,6 +1447,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AbrirChromeRoute: typeof AbrirChromeRoute
+  AcademyRoute: typeof AcademyRoute
   AjudaRoute: typeof AjudaRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   AssistenteRoute: typeof AssistenteRoute
@@ -1508,6 +1521,13 @@ declare module '@tanstack/react-router' {
       path: '/abrir-chrome'
       fullPath: '/abrir-chrome'
       preLoaderRoute: typeof AbrirChromeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/academy': {
+      id: '/academy'
+      path: '/academy'
+      fullPath: '/academy'
+      preLoaderRoute: typeof AcademyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ajuda': {
@@ -2479,6 +2499,7 @@ const RecursosRouteWithChildren = RecursosRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AbrirChromeRoute: AbrirChromeRoute,
+  AcademyRoute: AcademyRoute,
   AjudaRoute: AjudaRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   AssistenteRoute: AssistenteRoute,
