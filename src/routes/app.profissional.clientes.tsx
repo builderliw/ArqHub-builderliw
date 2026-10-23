@@ -102,18 +102,18 @@ function projectBelongsToClient(project: Projeto, client: Cliente) {
   );
 }
 
-const TABS: { k: TabKey; label: string; icon: typeof FolderOpen }[] = [
-  { k: "overview", label: "Visão geral", icon: FolderOpen },
-  { k: "agenda", label: "Agenda", icon: Calendar },
-  { k: "notes", label: "Anotações", icon: StickyNote },
-  { k: "contrato", label: "Contrato", icon: ClipboardList },
-  { k: "diario", label: "Diário de obra", icon: HardHat },
-  { k: "documents", label: "Documentos", icon: FileText },
-  { k: "presentation", label: "Meu projeto", icon: Presentation },
-  { k: "photos", label: "Galeria", icon: ImageIcon },
-  { k: "messages", label: "Mensagens", icon: MessageSquare },
-  { k: "products", label: "Produtos", icon: ShoppingBag },
-  { k: "activity", label: "Atividades", icon: History },
+const TABS: { k: TabKey; label: string; icon: typeof FolderOpen; color: string }[] = [
+  { k: "overview", label: "Visão geral", icon: FolderOpen, color: "#3d5c3a" },
+  { k: "agenda", label: "Agenda", icon: Calendar, color: "#4a6b47" },
+  { k: "notes", label: "Anotações", icon: StickyNote, color: "#557a52" },
+  { k: "contrato", label: "Contrato", icon: ClipboardList, color: "#608a5c" },
+  { k: "diario", label: "Diário de obra", icon: HardHat, color: "#6b9967" },
+  { k: "documents", label: "Documentos", icon: FileText, color: "#5c8a58" },
+  { k: "presentation", label: "Meu projeto", icon: Presentation, color: "#4f7a4b" },
+  { k: "photos", label: "Galeria", icon: ImageIcon, color: "#457044" },
+  { k: "messages", label: "Mensagens", icon: MessageSquare, color: "#3d663c" },
+  { k: "products", label: "Produtos", icon: ShoppingBag, color: "#4a7548" },
+  { k: "activity", label: "Atividades", icon: History, color: "#557f53" },
 ];
 
 function ClientesPage() {
@@ -340,7 +340,7 @@ function ClientesPage() {
                 </div>
 
                 <nav className="mt-4 -mx-5 -mb-4 px-5 overflow-x-auto scrollbar-none">
-                  <div className="flex items-end gap-0.5 border-b border-border min-w-max">
+                  <div className="flex items-end gap-0.5 border-b border-border min-w-max pt-1">
                     {TABS.map((t) => {
                       const Ico = t.icon;
                       const active = tab === t.k;
@@ -349,11 +349,21 @@ function ClientesPage() {
                           key={t.k}
                           type="button"
                           onClick={() => setTab(t.k)}
-                          className={`relative inline-flex items-center gap-1.5 px-3.5 h-9 whitespace-nowrap text-[12.5px] font-medium transition-colors border-b-2 -mb-px ${
-                            active
-                              ? "text-primary border-primary bg-primary/[0.04]"
-                              : "text-muted-foreground border-transparent hover:text-ink hover:bg-secondary/50"
-                          }`}
+                          className="relative inline-flex items-center gap-1.5 px-3 whitespace-nowrap text-[12.5px] font-medium rounded-t-lg border border-b-0 transition-all"
+                          style={{
+                            height: active ? 36 : 32,
+                            marginBottom: active ? -1 : 0,
+                            borderColor: active ? t.color : "transparent",
+                            borderTopWidth: active ? 2 : 1,
+                            borderTopColor: active ? t.color : "transparent",
+                            background: active
+                              ? "#fff"
+                              : `color-mix(in oklab, ${t.color} 14%, white)`,
+                            color: active
+                              ? t.color
+                              : `color-mix(in oklab, ${t.color} 80%, #3f3f3d)`,
+                            boxShadow: active ? "0 -2px 6px -4px rgba(61,92,58,0.35)" : "none",
+                          }}
                         >
                           <Ico className="h-3.5 w-3.5" strokeWidth={2} />
                           {t.label}
