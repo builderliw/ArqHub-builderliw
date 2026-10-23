@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { isDemoId, withDemoClient, withDemoProject } from "@/lib/demo-client";
 
 const Input = z.object({ accessToken: z.string().min(10) });
 
@@ -15,6 +16,10 @@ export const deleteProfissionalCliente = createServerFn({ method: "POST" })
     const { data: auth, error: authError } = await externalAdmin.auth.getUser(data.accessToken);
     const user = auth?.user;
     if (authError || !user) throw new Error("Sessão expirada. Entre novamente.");
+
+    if (isDemoId(data.clientId)) {
+      throw new Error("O cliente de demonstração não pode ser excluído.");
+    }
 
     const { data: offices } = await externalAdmin
       .from("offices")
@@ -103,7 +108,6 @@ export const listProfissionalClientData = createServerFn({ method: "POST" })
         .limit(1);
       const member = members?.[0] ?? null;
       if (member) {
-        // Server-side gate: members with a custom role must have "clientes" allowed.
         const allowed = (member as { allowed_modules?: string[] | null }).allowed_modules;
         if (allowed && !allowed.includes("clientes")) {
           throw new Error("Acesso negado ao módulo de clientes.");
@@ -132,7 +136,7 @@ export const listProfissionalClientData = createServerFn({ method: "POST" })
       isOwner = true;
     }
 
-    if (!officeId) return { officeId: null, clientes: [], projetos: [] };
+    if (!officeId) return { officeId: null, clientes: withDemoClient([]), projetos: withDemoProject([]) };
 
     if (isOwner) {
       const fullName =
@@ -178,7 +182,6 @@ export const listProfissionalClientData = createServerFn({ method: "POST" })
           .order("name", { ascending: true })
       : clientsFull;
 
-
     if (clientsRes.error) throw new Error(clientsRes.error.message);
     const clientes = (clientsRes.data ?? []) as ClientRow[];
     const clientById = new Map(clientes.map((client) => [client.id, client]));
@@ -204,5 +207,9 @@ export const listProfissionalClientData = createServerFn({ method: "POST" })
       client_email: normalizeEmail(clientById.get(project.client_id ?? "")?.email),
     }));
 
-    return { officeId, clientes, projetos };
+    return {
+      officeId,
+      clientes: withDemoClient(clientes),
+      projetos: withDemoProject(projetos),
+    };
   });
