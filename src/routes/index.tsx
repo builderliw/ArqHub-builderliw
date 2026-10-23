@@ -1,5 +1,15 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { SiteHeader } from "@/components/site-header";
-import { HomeRecursosSection } from "@/components/home-recursos-section";
-// FILE_TOO_LARGE_PLACEHOLDER_USE_BLOB
+import { createFileRoute } from "@tanstack/react-router";
+import { Home } from "@/components/home-landing-page";
+
+export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "ArqHub — Gestão para Arquitetura, Engenharia e Interiores" },
+      {
+        name: "description",
+        content: "Gerencie projetos, clientes, obras e finanças em um único lugar.",
+      },
+    ],
+  }),
+  component: Home,
+});
