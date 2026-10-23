@@ -4,8 +4,8 @@
  * IDs fixos (não existem no banco); a UI deve tratar `isDemo: true`.
  */
 
-export const DEMO_CLIENT_ID = "00000000-0000-4000-8000-democlient01";
-export const DEMO_PROJECT_ID = "00000000-0000-4000-8000-demoproject1";
+export const DEMO_CLIENT_ID = "00000000-0000-4000-8000-0000000000d1";
+export const DEMO_PROJECT_ID = "00000000-0000-4000-8000-0000000000d2";
 
 export type DemoClient = {
   id: string;
