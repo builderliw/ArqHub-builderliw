@@ -32,65 +32,104 @@ export const Route = createFileRoute("/conteudos/seu-negocio")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: SeuNegocioPage,
+  loader: async () => {
+    try {
+      const files = await listMaterialFiles({ data: { category: CATEGORY_SEU_NEGOCIO } });
+      const accessMap: Record<string, "free" | "subscriber"> = {};
+      for (const f of (files as any[]) ?? []) {
+        const key = f?.slug ?? f?.id ?? f?.name;
+        if (!key) continue;
+        accessMap[key] = f?.subscriber_only ? "subscriber" : "free";
+        // also map by material id when name contains it
+        for (const m of seuNegocioMaterials) {
+          if (String(key).includes(m.id) || m.id === key) {
+            accessMap[m.id] = f?.subscriber_only ? "subscriber" : "free";
+          }
+        }
+      }
+      // default known free materials as free if listed in static data
+      for (const m of seuNegocioMaterials) {
+        if (!accessMap[m.id]) accessMap[m.id] = "free";
+      }
+      return { accessMap };
+    } catch {
+      const accessMap: Record<string, "free" | "subscriber"> = {};
+      for (const m of seuNegocioMaterials) accessMap[m.id] = "free";
+      return { accessMap };
+    }
+  },
+  component: SeuNegocio,
 });
 
-function typeLabel(t?: string | null) {
-  if (!t) return "PDF";
-  const v = t.toLowerCase();
-  if (v.includes("planilha") || v.includes("xlsx") || v.includes("xls")) return "Planilha";
-  if (v.includes("doc")) return "Documento";
-  return "PDF";
-}
-
-function SeuNegocioPage() {
+function SeuNegocio() {
   const navigate = useNavigate();
-  const { loggedIn, loading: statusLoading } = useOfficeStatus();
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const [loginOpen, setLoginOpen] = useState(false);
+  const office = useOfficeStatus();
+  const isSubscriber = office.status === "active";
+  const [selected, setSelected] = useState<SeuNegocioMaterial | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({ nome: "", email: "", telefone: "" });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const { accessMap } = Route.useLoaderData();
+  const filesLoaded = true;
 
-  async function onDownload(item: SeuNegocioMaterial) {
-    if (item.comingSoon) {
+  function validate() {
+    const e: Record<string, string> = {};
+    if (form.nome.trim().length < 2) e.nome = "Informe seu nome completo.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "E-mail inválido.";
+    const digits = form.telefone.replace(/\D/g, "");
+    if (digits.length < 10 || digits.length > 11) e.telefone = "Telefone inválido (DDD + número).";
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!validate() || !selected) return;
+    setLoading(true);
+    try {
+      const { data: sess } = await externalSupabase.auth.getSession();
+      const accessToken = sess.session?.access_token;
+      const res = await getMaterialFileUrl({
+        data: { category: CATEGORY_SEU_NEGOCIO, slug: selected.id, accessToken },
+      });
+      if ((res as any).restricted) {
+        toast.error("Este material é exclusivo para assinantes. Assine um plano para baixar.");
+        setLoading(false);
+        return;
+      }
+      if (!(res as any).url) {
+        toast.error("Este material ainda não está disponível. Tente novamente em breve.");
+        setLoading(false);
+        return;
+      }
+      setDownloadUrl((res as any).url);
+      setSubmitted(true);
+      window.open((res as any).url, "_blank");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao gerar link de download.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function openMaterial(m: SeuNegocioMaterial) {
+    const access = accessMap[m.id];
+    if (!access) {
       toast.message("Este material estará disponível em breve.");
       return;
     }
-    if (statusLoading) return;
-    if (!loggedIn) {
-      setLoginOpen(true);
+    if (access === "subscriber" && !isSubscriber) {
+      toast.error("Material exclusivo para assinantes.");
+      navigate({ to: "/planos" as any });
       return;
     }
-    setDownloadingId(item.id);
-    try {
-      const url = await getMaterialFileUrl({
-        data: { slug: item.slug ?? item.id, category: CATEGORY_SEU_NEGOCIO },
-      });
-      if (!url) {
-        // fallback: list files
-        const files = await listMaterialFiles({
-          data: { category: CATEGORY_SEU_NEGOCIO },
-        });
-        const match = (files as any[])?.find(
-          (f) => f?.slug === item.slug || f?.id === item.id || f?.name?.includes(item.id),
-        );
-        if (match?.url) {
-          window.open(match.url, "_blank", "noopener,noreferrer");
-        } else if (item.fileUrl) {
-          window.open(item.fileUrl, "_blank", "noopener,noreferrer");
-        } else {
-          toast.error("Arquivo não encontrado.");
-        }
-        return;
-      }
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch (e: any) {
-      if (item.fileUrl) {
-        window.open(item.fileUrl, "_blank", "noopener,noreferrer");
-      } else {
-        toast.error(e?.message ?? "Não foi possível baixar.");
-      }
-    } finally {
-      setDownloadingId(null);
-    }
+    setSelected(m);
+    setSubmitted(false);
+    setDownloadUrl(null);
+    setForm({ nome: "", email: "", telefone: "" });
+    setErrors({});
   }
 
   return (
@@ -105,9 +144,7 @@ function SeuNegocioPage() {
             >
               <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao site
             </Link>
-            <p className="t-caption font-semibold tracking-[0.14em] text-primary uppercase mt-2">
-              Seu negócio
-            </p>
+            <p className="t-caption font-semibold tracking-[0.14em] text-primary uppercase mt-2">Seu negócio</p>
             <h1 className="mt-2 t-h1 max-w-3xl">
               Materiais e conteúdos para ajudar o{" "}
               <span className="text-primary">seu negócio a decolar</span>
@@ -121,69 +158,72 @@ function SeuNegocioPage() {
         <section className="py-8 lg:py-10 bg-surface">
           <div className="mx-auto max-w-7xl px-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {seuNegocioMaterials.map((item) => {
-                const soon = !!item.comingSoon;
-                const busy = downloadingId === item.id;
+              {seuNegocioMaterials.map((m) => {
+                const isSubOnly = accessMap[m.id] === "subscriber";
+                const comingSoon = filesLoaded && !accessMap[m.id];
                 return (
                   <article
-                    key={item.id}
-                    className="group flex gap-4 rounded-2xl border border-border bg-white p-4 sm:p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_16px_44px_-16px_rgba(0,0,0,0.12)]"
+                    key={m.id}
+                    className={`group grid grid-cols-[140px_1fr] gap-5 rounded-2xl bg-white border border-border p-5 transition-all ${
+                      comingSoon
+                        ? "opacity-90"
+                        : "hover:-translate-y-0.5 hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.18)]"
+                    }`}
                   >
-                    <div className="relative h-[132px] w-[108px] shrink-0 overflow-hidden rounded-xl bg-secondary">
-                      {item.coverUrl || item.cover ? (
-                        <img
-                          src={item.coverUrl || item.cover}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center">
-                          <FileText className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                      )}
-                      <span className="absolute left-2 top-2 inline-flex items-center rounded-md bg-black/70 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-                        {typeLabel(item.type)}
-                      </span>
-                      {soon && (
-                        <span className="absolute inset-0 flex items-center justify-center bg-black/45">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-ink">
-                            <Clock className="h-3 w-3" /> Em breve
-                          </span>
-                        </span>
-                      )}
+                    <div className="relative overflow-hidden rounded-lg bg-ink aspect-[3/4]">
+                      <img
+                        src={m.cover}
+                        alt={m.title}
+                        loading="lazy"
+                        className={`absolute inset-0 h-full w-full object-cover transition-transform duration-[600ms] ${
+                          comingSoon ? "opacity-40 grayscale" : "opacity-70 group-hover:scale-[1.04]"
+                        }`}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/30 to-transparent" />
+                      <div className="absolute top-2 left-2 inline-flex items-center gap-1 t-caption text-white">
+                        <FileText className="h-3 w-3" /> {m.format}
+                      </div>
+                      <div
+                        className={`absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full shadow-md ring-1 ${
+                          comingSoon
+                            ? "bg-slate-200 text-slate-700 ring-slate-300"
+                            : isSubOnly
+                              ? "bg-amber-400 text-amber-950 ring-amber-300"
+                              : "bg-emerald-500 text-white ring-emerald-300"
+                        }`}
+                        title={comingSoon ? "Em breve" : isSubOnly ? "Exclusivo para assinantes" : "Download gratuito"}
+                      >
+                        {comingSoon ? (
+                          <Clock className="h-3.5 w-3.5" />
+                        ) : isSubOnly ? (
+                          <Crown className="h-3.5 w-3.5" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                      </div>
+                      <div className="absolute bottom-2 left-2 right-2">
+                        <p className="text-[12px] font-semibold text-white leading-snug line-clamp-2">{m.title}</p>
+                      </div>
                     </div>
 
-                    <div className="min-w-0 flex-1 flex flex-col">
-                      <h3 className="text-[15px] font-semibold leading-snug text-ink">{item.title}</h3>
-                      {item.description && (
-                        <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground line-clamp-3">
-                          {item.description}
-                        </p>
-                      )}
-                      <div className="mt-auto pt-3 flex items-center gap-2 flex-wrap">
-                        {soon ? (
-                          <span className="inline-flex items-center gap-1 text-[12px] text-muted-foreground">
+                    <div className="min-w-0 flex flex-col">
+                      <h3 className="text-[15px] font-semibold text-ink leading-snug">{m.title}</h3>
+                      <p className="mt-1.5 text-[13px] text-muted-foreground leading-relaxed line-clamp-4">
+                        {m.description}
+                      </p>
+                      <div className="mt-auto pt-3">
+                        {comingSoon ? (
+                          <span className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground">
                             <Clock className="h-3.5 w-3.5" /> Em breve
                           </span>
                         ) : (
                           <button
                             type="button"
-                            onClick={() => void onDownload(item)}
-                            disabled={busy}
-                            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-primary text-white text-[12.5px] font-medium hover:bg-primary/90 disabled:opacity-60"
+                            onClick={() => openMaterial(m)}
+                            className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-primary text-white text-[12.5px] font-medium hover:bg-primary/90"
                           >
-                            {busy ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              <Download className="h-3.5 w-3.5" />
-                            )}
-                            Baixar
+                            <Download className="h-3.5 w-3.5" /> Baixar
                           </button>
-                        )}
-                        {item.premium && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700">
-                            <Crown className="h-3 w-3" /> Premium
-                          </span>
                         )}
                       </div>
                     </div>
@@ -196,33 +236,81 @@ function SeuNegocioPage() {
       </main>
       <SiteFooter />
 
-      <Dialog open={loginOpen} onOpenChange={setLoginOpen}>
+      <Dialog
+        open={!!selected}
+        onOpenChange={(open) => {
+          if (!open) setSelected(null);
+        }}
+      >
         <DialogContent className="sm:max-w-md">
-          <div className="space-y-3">
-            <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Lock className="h-5 w-5" />
-            </div>
-            <h3 className="text-[17px] font-semibold text-ink">Faça login para baixar</h3>
-            <p className="text-[13.5px] text-muted-foreground leading-relaxed">
-              Os materiais são gratuitos. Entre ou crie sua conta para liberar o download.
-            </p>
-            <div className="flex flex-wrap gap-2 pt-1">
+          {selected && !submitted && (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <h3 className="text-[17px] font-semibold text-ink">Baixar material</h3>
+                <p className="mt-1 text-[13px] text-muted-foreground">{selected.title}</p>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[12px] font-medium text-ink">Nome completo</label>
+                  <input
+                    value={form.nome}
+                    onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
+                    className="mt-1 w-full h-10 rounded-lg border border-border px-3 text-[13px] outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                  {errors.nome && <p className="mt-1 text-[11px] text-red-600">{errors.nome}</p>}
+                </div>
+                <div>
+                  <label className="text-[12px] font-medium text-ink">E-mail</label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                    className="mt-1 w-full h-10 rounded-lg border border-border px-3 text-[13px] outline-none focus:ring-2 focus:ring-primary/30"
+                  />
+                  {errors.email && <p className="mt-1 text-[11px] text-red-600">{errors.email}</p>}
+                </div>
+                <div>
+                  <label className="text-[12px] font-medium text-ink">Telefone</label>
+                  <input
+                    value={form.telefone}
+                    onChange={(e) => setForm((f) => ({ ...f, telefone: e.target.value }))}
+                    className="mt-1 w-full h-10 rounded-lg border border-border px-3 text-[13px] outline-none focus:ring-2 focus:ring-primary/30"
+                    placeholder="(00) 00000-0000"
+                  />
+                  {errors.telefone && <p className="mt-1 text-[11px] text-red-600">{errors.telefone}</p>}
+                </div>
+              </div>
               <button
-                type="button"
-                onClick={() => navigate({ to: "/entrar" })}
-                className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-primary text-white text-[13px] font-medium"
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 rounded-lg bg-primary text-white text-[13px] font-medium hover:bg-primary/90 disabled:opacity-60 inline-flex items-center justify-center gap-2"
               >
-                Entrar <ArrowRight className="h-3.5 w-3.5" />
+                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {loading ? "Gerando link..." : "Baixar agora"}
               </button>
-              <button
-                type="button"
-                onClick={() => setLoginOpen(false)}
-                className="h-10 px-4 rounded-lg border border-border text-[13px] font-medium text-ink"
-              >
-                Agora não
-              </button>
+            </form>
+          )}
+          {selected && submitted && (
+            <div className="space-y-3 text-center py-2">
+              <div className="mx-auto inline-flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <h3 className="text-[17px] font-semibold text-ink">Download liberado</h3>
+              <p className="text-[13px] text-muted-foreground">
+                Se o download não iniciou, use o botão abaixo.
+              </p>
+              {downloadUrl && (
+                <a
+                  href={downloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-primary text-white text-[13px] font-medium"
+                >
+                  <Download className="h-4 w-4" /> Baixar arquivo
+                </a>
+              )}
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
