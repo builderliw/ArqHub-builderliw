@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Mail, Lock, User, ArrowRight, ArrowLeft } from "lucide-react";
 import { setSession } from "@/lib/session";
-import { GoogleSignInButton } from "@/components/google-sign-in-button";
 import { externalSupabase } from "@/integrations/external-supabase/client";
 import { toast } from "sonner";
 import arqhubLogo from "@/assets/arqhub-logo.png.asset.json";
@@ -52,7 +51,6 @@ function Cadastro() {
       return;
     }
 
-    // Se já temos sessão (auto-confirm ligado), seed profile + office
     if (data.session) {
       await externalSupabase.from("profiles").upsert(
         { id: data.user.id, email, full_name: name },
@@ -69,14 +67,12 @@ function Cadastro() {
 
   return (
     <div className="relative min-h-screen flex flex-col items-center justify-center px-6 py-12 overflow-hidden">
-      {/* Background image blurred */}
       <img
         src={cadastroBg}
         alt=""
         aria-hidden="true"
         className="absolute inset-0 w-full h-full object-cover scale-105 blur-sm"
       />
-      {/* Dark/orange overlay to match brand */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#0b1220]/70 via-[#1d1d1b]/55 to-primary/25" />
 
       <button
@@ -90,12 +86,10 @@ function Cadastro() {
         Voltar ao site
       </button>
 
-      {/* Glass card */}
       <form
         onSubmit={handleSubmit}
         className="relative z-10 w-full max-w-md rounded-2xl border border-white/40 bg-white/85 backdrop-blur-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)] p-8"
       >
-        {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-6">
           <img src={arqhubLogo.url} alt="ArqHub" className="h-10 w-10 object-contain" />
           <div className="text-2xl font-bold tracking-tight font-display">
@@ -105,16 +99,7 @@ function Cadastro() {
 
         <h1 className="text-2xl font-bold tracking-tight text-[#0b1220] text-center">Comece grátis</h1>
 
-        <div className="mt-6">
-          <GoogleSignInButton label="Criar conta com Google" redirectPath="/auth/callback" />
-          <div className="my-5 flex items-center gap-3">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground">ou</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-        </div>
-
-        <div className="space-y-4">
+        <div className="mt-6 space-y-4">
           <div>
             <label className="text-xs font-semibold text-foreground/70">Nome</label>
             <div className="relative mt-1">
@@ -172,9 +157,7 @@ function Cadastro() {
             </div>
           </div>
 
-          {error && (
-            <p className="text-xs font-medium text-red-600">{error}</p>
-          )}
+          {error && <p className="text-xs font-medium text-red-600">{error}</p>}
 
           <button
             type="submit"
@@ -185,9 +168,9 @@ function Cadastro() {
           </button>
 
           <p className="text-center text-xs text-muted-foreground">
-            concorda com <Link to="/termos" className="underline hover:text-primary">Termos</Link> e <Link to="/privacidade" className="underline hover:text-primary">Política de Privacidade</Link>.
+            concorda com <Link to="/termos" className="underline hover:text-primary">Termos</Link> e{" "}
+            <Link to="/privacidade" className="underline hover:text-primary">Política de Privacidade</Link>.
           </p>
-
         </div>
       </form>
 
