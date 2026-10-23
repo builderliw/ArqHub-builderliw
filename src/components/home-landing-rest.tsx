@@ -17,6 +17,8 @@ import { ChatPortalDemo } from "@/components/marketing/chat-portal-demo";
 import { DiarioObraDemo } from "@/components/marketing/diario-obra-demo";
 import { PlanosPreview } from "@/components/home-planos-preview";
 
+const DEMO_OBRA_URL = "https://arqhub.site/obra/demo";
+
 const modules = [
   { icon: LayoutGrid, title: "Projetos", slug: "projetos", desc: "Acompanhe ativos, concluídos, status e timeline em uma só visão.", details: "Centralize todos os projetos do escritório em um só lugar." },
   { icon: CheckSquare, title: "Tarefas", slug: "cronograma", desc: "Kanban com A Fazer, Em Andamento, Revisão e Concluído.", details: "Quadro Kanban arrastar-e-soltar com 4 colunas." },
@@ -196,12 +198,12 @@ export function HomeLandingRest() {
             <div className="bg-white rounded-2xl p-6 text-center shadow-xl max-w-sm w-full">
               <div className="text-[12px] text-muted-foreground mb-3">Escaneie para ver a visão do cliente ao vivo</div>
               <div className="inline-block p-3 bg-white rounded-xl">
-                <QRCodeSVG value="https://arqhub.app/obra/demo" size={180} level="M" />
+                <QRCodeSVG value={DEMO_OBRA_URL} size={180} level="M" />
               </div>
               <div className="mt-3 text-[12px] text-muted-foreground">
                 ou acesse pelo link{" "}
-                <a href="https://arqhub.app/obra/demo" className="text-primary font-medium hover:underline" target="_blank" rel="noreferrer">
-                  arqhub.app/obra/demo
+                <a href={DEMO_OBRA_URL} className="text-primary font-medium hover:underline" target="_blank" rel="noreferrer">
+                  arqhub.site/obra/demo
                 </a>
               </div>
             </div>
