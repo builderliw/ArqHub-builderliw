@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, FolderOpen, Users, Calendar,
   MessageSquare, UsersRound, Wallet, FileText,
-  Calculator, Ruler, CalendarClock, ClipboardList,
+  Calculator, Ruler, CalendarClock, ClipboardList, FileSignature,
 } from "lucide-react";
 
 import type { NavGroup } from "@/components/app-shell";
@@ -22,11 +22,12 @@ export function getNavProfissional(plan: Plan | undefined, isMember = false): Na
     { to: "/app/profissional/relatorios", label: "Relatórios", icon: FileText },
   ];
 
-  // Ferramentas Premium: visíveis para todos os planos.
-  // O gate de "usar" (vs apenas visualizar) é feito dentro da própria página.
+  // Ferramentas: visíveis para todos os planos.
+  // O gate de "usar" (vs apenas visualizar) é feito dentro da própria página quando aplicável.
   const premiumTools: NavGroup = {
     label: "Ferramentas Premium",
     items: [
+      { to: "/app/profissional/ferramentas/laudo", label: "Laudo Técnico", icon: FileSignature },
       { to: "/app/profissional/ferramentas/orcamentos", label: "Orçamentos Inteligentes", icon: Calculator },
       { to: "/app/profissional/ferramentas/levantamento", label: "Levantamento Quantitativo", icon: Ruler },
       { to: "/app/profissional/ferramentas/planejamento", label: "Planejamento de Obra", icon: CalendarClock },
